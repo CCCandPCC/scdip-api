@@ -4,36 +4,36 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
-- master
+  - azure-devops-ci #temporary trigger name as feature branch for testing purposes
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: "ubuntu-latest"
 
 steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '10.x'
-  displayName: 'Install Node.js'
+  - task: AWSShellScript@1
+    displayName: AWS SAM build
+    inputs:
+      awsCredentials: "SDLC-AWS"
+      regionName: "eu-west-2"
+      scriptType: "filePath"
+      filePath: "./build.sh"
 
-- task: Bash@3
-  inputs:
-    filePath: './build.sh'
+  - task: AWSShellScript@1
+    displayName: AWS SAM package
+    inputs:
+      awsCredentials: "SDLC-AWS"
+      regionName: "eu-west-2"
+      scriptType: "inline"
+      inlineScript: |
+        sam package --output-template-file packaged.yaml --s3-bucket lgss-continuous-integration
 
-- task: AWSCLI@1
-  inputs:
-    awsCredentials: 'SDLC-AWS'
-    regionName: 'eu-west-2'
-    awsCommand: 'cloudformation'
-    awsSubCommand: 'package'
-    awsArguments: '--template-file template.yaml --output-template-file template-output.yaml --s3-bucket $(S3_BUCKET) --s3-prefix rekommend'
+  - task: CopyFiles@2
+    inputs:
+      Contents: "packaged.yaml"
+      TargetFolder: "$(Build.ArtifactStagingDirectory)"
 
-- task: CopyFiles@2
-  inputs:
-    Contents: '**'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'package-output'
-    publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+      ArtifactName: "package-output"
+      publishLocation: "Container"

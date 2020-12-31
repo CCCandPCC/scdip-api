@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: SCDIP editor web service
 Parameters:
@@ -15,36 +15,36 @@ Resources:
       AccessControl: PublicRead
       BucketName:
         Fn::Join:
-        - ''
-        - [Ref: Stage, -rekommend]
+          - ""
+          - [Ref: Stage, "-", AWS::CloudFormation::Stack::StackName]
       CorsConfiguration:
         CorsRules:
-        - AllowedHeaders: ['*']
-          AllowedMethods: [GET]
-          AllowedOrigins: ['*']
-          ExposedHeaders: [Date]
-          Id: rekommendCORSGetRule
-          MaxAge: '3600'
-        - AllowedHeaders: ['*']
-          AllowedMethods: [PUT]
-          AllowedOrigins: ['*']
-          ExposedHeaders: [Date]
-          Id: rekommendCORSPutRule
-          MaxAge: '3600'
-  
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET]
+            AllowedOrigins: ["*"]
+            ExposedHeaders: [Date]
+            Id: rekommendCORSGetRule
+            MaxAge: "3600"
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [PUT]
+            AllowedOrigins: ["*"]
+            ExposedHeaders: [Date]
+            Id: rekommendCORSPutRule
+            MaxAge: "3600"
+
   MainTable:
     Type: AWS::Serverless::SimpleTable
     TableName:
       Fn::Join:
-      - ''
-      - [Ref: Stage, -rekommend]
+        - ""
+        - [Ref: Stage, "-", AWS::CloudFormation::Stack::StackName]
 
   EditorApiAlias:
     Type: AWS::Serverless::Application
     Properties:
       Location: editor/.aws-sam/build/template.yaml
       Parameters:
-        MainTable: 
+        MainTable:
           Ref: MainTable
         AttachmentsBucket:
           Ref: AttachmentsBucket
@@ -58,7 +58,7 @@ Resources:
     Properties:
       Location: player/.aws-sam/build/template.yaml
       Parameters:
-        MainTable: 
+        MainTable:
           Ref: MainTable
         AttachmentsBucket:
           Ref: AttachmentsBucket
@@ -69,7 +69,8 @@ Resources:
 Outputs:
   FilesBucketName:
     Description: Name of the Amazon S3 bucket that contains files with CORS enabled.
-    Value: !Ref 'AttachmentsBucket'
+    Value:
+      Ref: AttachmentsBucket
   ApiURL:
     Description: Player API endpoint URL
     Value:
