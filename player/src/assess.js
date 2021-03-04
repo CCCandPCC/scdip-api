@@ -5,7 +5,7 @@ exports.dynamo = new AWS.DynamoDB.DocumentClient();
 
 const tableName = process.env.TABLE_NAME;
 
-const { v4: uuidv4 } = require('uuid')
+const { nanoid } = require('nanoid')
 
 function intersects(one, two) {
   return one && two && (one.some(element => two.includes(element)))
@@ -46,7 +46,7 @@ exports.compileResults = (event) => {
       FilterExpression: 'sort = :input',
       ExpressionAttributeValues: { ':input': 'resource' },
     };
-    let newId = uuidv4();
+    let newId = nanoid(11);
     let filteredResourceList = []
 
     return this.dynamo.scan(params).promise()

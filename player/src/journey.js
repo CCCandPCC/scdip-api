@@ -41,27 +41,28 @@ exports.compile = (event) => {
     return Promise.all([db.dynamo.batchGet(params).promise(),transitionPromise()])
     .then( ([data,transitionPage]) => {
         const journeys = data.Responses[tableName]
-        journeys.forEach(journey => {
-            journey.doc.pages.forEach(page => page.journey = journey.label)
-        })
-        const pages = journeys.map(x => x.doc.pages)
+
+        let titles = new Set()
+
+        let pages = journeys.map(jny => {
+            const pages = jny.doc.pages.filter(x => {
+                if (titles.has(x))
+                    return false
+
+                titles.add(x)
+                return true
+            })
+            
+            pages.forEach(page => page.journey = jny.label)
+            return pages
+        }).filter(x => x.length > 0).flat()
         
-        const pages_trans = pages.reduce((acc, cur) => {
-            if(acc.length < 1){
-                return [...acc, cur]
-            } else {
-                return [...acc, prependItems(transitionPage, cur[0].journey), cur]
-            }
-        },[])
+        if (transitionPage.Item)
+            pages = pages.join(prependItems(transitionPage))
         
-        const fields = pages_trans.reduce((a, b) => [...a, ...b])
-        const distinct = (value, index, self) => {
-            return self.findIndex(x => x.title === value.title) === index || value.title == 'Transition'
-        }
-        const uniqueFields = fields.filter(distinct)
-        return createResponse(200, JSON.stringify({"pages": uniqueFields}));
+        return createResponse(200, JSON.stringify({pages}));
     }).catch( (err) => { 
-        console.log(`journey.compile error: ${err}`);
-        return createResponse(500, JSON.stringify(err));
+        console.log(`journey.compile error: ${JSON.stringify(err)}`);
+        return createResponse(500);
     });
 }
